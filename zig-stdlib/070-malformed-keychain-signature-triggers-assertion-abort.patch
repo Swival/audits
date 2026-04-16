@@ -1,0 +1,26 @@
+diff --git a/lib/std/crypto/Certificate/Bundle/macos.zig b/lib/std/crypto/Certificate/Bundle/macos.zig
+index ea8a91702d..6468be3c97 100644
+--- a/lib/std/crypto/Certificate/Bundle/macos.zig
++++ b/lib/std/crypto/Certificate/Bundle/macos.zig
+@@ -1,12 +1,11 @@
+ const std = @import("std");
+ const Io = std.Io;
+-const assert = std.debug.assert;
+ const fs = std.fs;
+ const mem = std.mem;
+ const Allocator = std.mem.Allocator;
+ const Bundle = @import("../Bundle.zig");
+ 
+-pub const RescanMacError = Allocator.Error || Io.File.OpenError || Io.File.Reader.Error || Io.File.SeekError || Bundle.ParseCertError || error{EndOfStream};
++pub const RescanMacError = Allocator.Error || Io.File.OpenError || Io.File.Reader.Error || Io.File.SeekError || Bundle.ParseCertError || error{EndOfStream, InvalidFormat};
+ 
+ pub fn rescanMac(cb: *Bundle, gpa: Allocator, io: Io, now: Io.Timestamp) RescanMacError!void {
+     cb.bytes.clearRetainingCapacity();
+@@ -36,7 +35,7 @@ pub fn rescanMac(cb: *Bundle, gpa: Allocator, io: Io, now: Io.Timestamp) RescanM
+ 
+ fn scanReader(cb: *Bundle, gpa: Allocator, reader: *Io.Reader, now_sec: i64) !void {
+     const db_header = try reader.takeStruct(ApplDbHeader, .big);
+-    assert(mem.eql(u8, &db_header.signature, "kych"));
++    if (!mem.eql(u8, &db_header.signature, "kych")) return error.InvalidFormat;
+ 
+     reader.seek = db_header.schema_offset;

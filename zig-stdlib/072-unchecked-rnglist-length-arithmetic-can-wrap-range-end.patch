@@ -1,0 +1,60 @@
+diff --git a/lib/std/debug/Dwarf.zig b/lib/std/debug/Dwarf.zig
+index fe28baf8bf..a2c6d56c90 100644
+--- a/lib/std/debug/Dwarf.zig
++++ b/lib/std/debug/Dwarf.zig
+@@ -712,13 +712,13 @@ const DebugRangeIterator = struct {
+                         const offset_loc = compile_unit.rnglists_base + 4 * idx;
+                         if (offset_loc + 4 > debug_ranges.len) return bad();
+                         const offset = mem.readInt(u32, debug_ranges[@intCast(offset_loc)..][0..4], endian);
+-                        break :off compile_unit.rnglists_base + offset;
++                        break :off std.math.add(usize, compile_unit.rnglists_base, offset) catch return bad();
+                     },
+                     .@"64" => {
+                         const offset_loc = compile_unit.rnglists_base + 8 * idx;
+                         if (offset_loc + 8 > debug_ranges.len) return bad();
+                         const offset = mem.readInt(u64, debug_ranges[@intCast(offset_loc)..][0..8], endian);
+-                        break :off compile_unit.rnglists_base + offset;
++                        break :off std.math.add(usize, compile_unit.rnglists_base, cast(usize, offset) orelse return bad()) catch return bad();
+                     },
+                 }
+             },
+@@ -778,7 +778,7 @@ const DebugRangeIterator = struct {
+                         const start_addr = try self.di.readDebugAddr(endian, self.compile_unit, start_index);
+ 
+                         const len = try self.fr.takeLeb128(u64);
+-                        const end_addr = start_addr + len;
++                        const end_addr = std.math.add(u64, start_addr, len) catch return bad();
+ 
+                         return .{
+                             .start = start_addr,
+@@ -791,8 +791,8 @@ const DebugRangeIterator = struct {
+ 
+                         // This is the only kind that uses the base address
+                         return .{
+-                            .start = self.base_address + start_addr,
+-                            .end = self.base_address + end_addr,
++                            .start = std.math.add(u64, self.base_address, start_addr) catch return bad(),
++                            .end = std.math.add(u64, self.base_address, end_addr) catch return bad(),
+                         };
+                     },
+                     RLE.base_address => {
+@@ -811,7 +811,7 @@ const DebugRangeIterator = struct {
+                     RLE.start_length => {
+                         const start_addr = try readAddress(&self.fr, endian, addr_size_bytes);
+                         const len = try self.fr.takeLeb128(u64);
+-                        const end_addr = start_addr + len;
++                        const end_addr = std.math.add(u64, start_addr, len) catch return bad();
+ 
+                         return .{
+                             .start = start_addr,
+@@ -834,8 +834,8 @@ const DebugRangeIterator = struct {
+                 }
+ 
+                 return .{
+-                    .start = self.base_address + start_addr,
+-                    .end = self.base_address + end_addr,
++                    .start = std.math.add(u64, self.base_address, start_addr) catch return bad(),
++                    .end = std.math.add(u64, self.base_address, end_addr) catch return bad(),
+                 };
+             },
+             else => unreachable,

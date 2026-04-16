@@ -1,0 +1,22 @@
+diff --git a/lib/std/debug/Dwarf.zig b/lib/std/debug/Dwarf.zig
+index fe28baf8bf..a50069417a 100644
+--- a/lib/std/debug/Dwarf.zig
++++ b/lib/std/debug/Dwarf.zig
+@@ -513,7 +513,7 @@ fn scanAllFunctions(di: *Dwarf, gpa: Allocator, endian: Endian) ScanError!void {
+                         if (die_obj.getAttr(AT.high_pc)) |high_pc_value| {
+                             const pc_end = switch (high_pc_value.*) {
+                                 .addr => |value| value,
+-                                .udata => |offset| low_pc + offset,
++                                .udata => |offset| try std.math.add(u64, low_pc, offset),
+                                 else => return bad(),
+                             };
+ 
+@@ -636,7 +636,7 @@ fn scanAllCompileUnits(di: *Dwarf, gpa: Allocator, endian: Endian) ScanError!voi
+                 if (compile_unit_die.getAttr(AT.high_pc)) |high_pc_value| {
+                     const pc_end = switch (high_pc_value.*) {
+                         .addr => |value| value,
+-                        .udata => |offset| low_pc + offset,
++                        .udata => |offset| try std.math.add(u64, low_pc, offset),
+                         else => return bad(),
+                     };
+                     break :x PcRange{

@@ -1,0 +1,30 @@
+diff --git a/lib/std/crypto/Certificate.zig b/lib/std/crypto/Certificate.zig
+index 1ba076e1fa..d1569a9ca2 100644
+--- a/lib/std/crypto/Certificate.zig
++++ b/lib/std/crypto/Certificate.zig
+@@ -901,6 +901,11 @@ pub const der = struct {
+         pub const ParseError = error{CertificateFieldHasInvalidLength};
+ 
+         pub fn parse(bytes: []const u8, index: u32) Element.ParseError!Element {
++            const bytes_len: u32 = @intCast(bytes.len);
++            if (index > bytes_len or bytes_len - index < 2) {
++                return error.CertificateFieldHasInvalidLength;
++            }
++
+             var i = index;
+             const identifier: Identifier = @bitCast(bytes[i]);
+             i += 1;
+@@ -917,11 +922,11 @@ pub const der = struct {
+             }
+ 
+             const len_size: u7 = @truncate(size_byte);
+-            if (len_size > @sizeOf(u32)) {
++            if (len_size > @sizeOf(u32) or bytes_len - i < @as(u32, len_size)) {
+                 return error.CertificateFieldHasInvalidLength;
+             }
+ 
+-            const end_i = i + len_size;
++            const end_i = i + @as(u32, len_size);
+             var long_form_size: u32 = 0;
+             while (i < end_i) : (i += 1) {
+                 long_form_size = (long_form_size << 8) | bytes[i];

@@ -1,0 +1,16 @@
+diff --git a/lib/std/crypto/Certificate.zig b/lib/std/crypto/Certificate.zig
+index 1ba076e1fa..c36accd176 100644
+--- a/lib/std/crypto/Certificate.zig
++++ b/lib/std/crypto/Certificate.zig
+@@ -580,7 +580,10 @@ pub fn parseTime(cert: Certificate, elem: der.Element) ParseTimeError!u64 {
+                 return error.CertificateTimeInvalid;
+ 
+             return Date.toSeconds(.{
+-                .year = @as(u16, 2000) + try parseTimeDigits(bytes[0..2], 0, 99),
++                .year = blk: {
++                    const year = try parseTimeDigits(bytes[0..2], 0, 99);
++                    break :blk if (year < 50) @as(u16, 2000) + year else @as(u16, 1900) + year;
++                },
+                 .month = try parseTimeDigits(bytes[2..4], 1, 12),
+                 .day = try parseTimeDigits(bytes[4..6], 1, 31),
+                 .hour = try parseTimeDigits(bytes[6..8], 0, 23),

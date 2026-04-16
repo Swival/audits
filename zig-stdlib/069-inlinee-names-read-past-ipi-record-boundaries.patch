@@ -1,0 +1,27 @@
+diff --git a/lib/std/debug/Pdb.zig b/lib/std/debug/Pdb.zig
+index 6c48d10dcd..4fb9d5bf3a 100644
+--- a/lib/std/debug/Pdb.zig
++++ b/lib/std/debug/Pdb.zig
+@@ -570,12 +570,18 @@ pub fn findInlineeName(self: *const Pdb, inlinee: u32) ?[]const u8 {
+         if (curr_type_index == type_index) {
+             switch (prefix.kind) {
+                 .func_id => {
+-                    const func: *align(1) pdb.LfFuncId = @ptrCast(prefix);
+-                    return std.mem.sliceTo(@as([*:0]const u8, @ptrCast(&func.name[0])), 0);
++                    const record_len = @sizeOf(u16) + @as(usize, prefix.len);
++                    const name_offset = @offsetOf(pdb.LfFuncId, "name");
++                    if (record_len < name_offset + 1) return null;
++                    const name = @as([*]const u8, @ptrCast(prefix))[name_offset..record_len];
++                    return name[0 .. std.mem.indexOfScalar(u8, name, 0) orelse return null];
+                 },
+                 .mfunc_id => {
+-                    const func: *align(1) pdb.LfMFuncId = @ptrCast(prefix);
+-                    return std.mem.sliceTo(@as([*:0]const u8, @ptrCast(&func.name[0])), 0);
++                    const record_len = @sizeOf(u16) + @as(usize, prefix.len);
++                    const name_offset = @offsetOf(pdb.LfMFuncId, "name");
++                    if (record_len < name_offset + 1) return null;
++                    const name = @as([*]const u8, @ptrCast(prefix))[name_offset..record_len];
++                    return name[0 .. std.mem.indexOfScalar(u8, name, 0) orelse return null];
+                 },
+                 else => return null,
+             }

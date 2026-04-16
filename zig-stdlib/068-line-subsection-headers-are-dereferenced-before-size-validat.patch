@@ -1,0 +1,34 @@
+diff --git a/lib/std/debug/Pdb.zig b/lib/std/debug/Pdb.zig
+index 6c48d10dcd..ce69cb7985 100644
+--- a/lib/std/debug/Pdb.zig
++++ b/lib/std/debug/Pdb.zig
+@@ -724,9 +724,14 @@ pub fn getLineNumberInfo(self: *Pdb, gpa: Allocator, module: *Module, address: u
+     var sect_offset: usize = 0;
+     var skip_len: usize = undefined;
+     while (sect_offset != subsect_info.len) : (sect_offset += skip_len) {
++        if (sect_offset > subsect_info.len or
++            subsect_info.len - sect_offset < @sizeOf(pdb.DebugSubsectionHeader))
++            return error.InvalidDebugInfo;
+         const subsect_hdr: *align(1) pdb.DebugSubsectionHeader = @ptrCast(&subsect_info[sect_offset]);
+         skip_len = subsect_hdr.length;
+         sect_offset += @sizeOf(pdb.DebugSubsectionHeader);
++        if (skip_len > subsect_info.len - sect_offset)
++            return error.InvalidDebugInfo;
+ 
+         switch (subsect_hdr.kind) {
+             .lines => {
+@@ -874,9 +879,14 @@ pub fn getModule(self: *Pdb, index: usize) !?*Module {
+     var sect_offset: usize = 0;
+     var skip_len: usize = undefined;
+     while (sect_offset != mod.subsect_info.len) : (sect_offset += skip_len) {
++        if (sect_offset > mod.subsect_info.len or
++            mod.subsect_info.len - sect_offset < @sizeOf(pdb.DebugSubsectionHeader))
++            return error.InvalidDebugInfo;
+         const subsect_hdr: *align(1) pdb.DebugSubsectionHeader = @ptrCast(&mod.subsect_info[sect_offset]);
+         skip_len = subsect_hdr.length;
+         sect_offset += @sizeOf(pdb.DebugSubsectionHeader);
++        if (skip_len > mod.subsect_info.len - sect_offset)
++            return error.InvalidDebugInfo;
+ 
+         switch (subsect_hdr.kind) {
+             .file_checksums => {

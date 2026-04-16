@@ -1,0 +1,18 @@
+diff --git a/lib/std/debug/Pdb.zig b/lib/std/debug/Pdb.zig
+index 6c48d10dcd..b1cb7ddfe1 100644
+--- a/lib/std/debug/Pdb.zig
++++ b/lib/std/debug/Pdb.zig
+@@ -643,7 +643,12 @@ pub fn getInlineSiteSourceLocation(
+ 
+ pub fn getFileName(self: *Pdb, gpa: Allocator, mod: *Module, file_id: u32) ![]const u8 {
+     const checksum_offset = mod.checksum_offset orelse return error.MissingDebugInfo;
+-    const subsect_index = checksum_offset + file_id;
++    const subsect_index = std.math.add(usize, checksum_offset, file_id) catch return error.InvalidDebugInfo;
++    if (subsect_index > mod.subsect_info.len or
++        mod.subsect_info.len - subsect_index < @sizeOf(pdb.FileChecksumEntryHeader))
++    {
++        return error.InvalidDebugInfo;
++    }
+     const chksum_hdr: *align(1) pdb.FileChecksumEntryHeader = @ptrCast(&mod.subsect_info[subsect_index]);
+     const strtab_offset = @sizeOf(pdb.StringTableHeader) + chksum_hdr.file_name_offset;
+     self.string_table.?.seekTo(strtab_offset) catch return error.InvalidDebugInfo;

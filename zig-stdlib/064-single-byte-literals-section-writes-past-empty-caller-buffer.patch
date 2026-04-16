@@ -1,0 +1,12 @@
+diff --git a/lib/std/compress/zstd/Decompress.zig b/lib/std/compress/zstd/Decompress.zig
+index cab1ee99f4..bc4c67ba8f 100644
+--- a/lib/std/compress/zstd/Decompress.zig
++++ b/lib/std/compress/zstd/Decompress.zig
+@@ -1318,6 +1318,7 @@ pub const LiteralsSection = struct {
+                 };
+             },
+             .rle => {
++                if (buffer.len < 1) return error.MalformedLiteralsSection;
+                 remaining.* = remaining.subtract(1) orelse return error.EndOfStream;
+                 buffer[0] = try in.takeByte();
+                 return .{

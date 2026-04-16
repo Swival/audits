@@ -1,0 +1,13 @@
+diff --git a/src/html5_cli.c b/src/html5_cli.c
+index 275e29c..d4f6817 100644
+--- a/src/html5_cli.c
++++ b/src/html5_cli.c
+@@ -182,7 +182,7 @@ int main(int argc, const char *argv[]) {
+      */
+ 
+     slen = strlen(argv[offset]);
+-    copy = (char *)malloc(slen);
++    copy = (char *)malloc(slen + 1);
+     if (copy == NULL) {
+         fprintf(stderr, "out of memory\n");
+         return 1;

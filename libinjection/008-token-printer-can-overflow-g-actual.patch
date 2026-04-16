@@ -1,0 +1,12 @@
+diff --git a/src/testdriver.c b/src/testdriver.c
+index 2088676..9db06f3 100644
+--- a/src/testdriver.c
++++ b/src/testdriver.c
+@@ -4,6 +4,7 @@
+ #include "libinjection_xss.h"
+ #include <assert.h>
+ #include <glob.h>
++#include <stdarg.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>

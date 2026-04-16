@@ -1,0 +1,13 @@
+diff --git a/src/testdriver.c b/src/testdriver.c
+index 2088676..48903c9 100644
+--- a/src/testdriver.c
++++ b/src/testdriver.c
+@@ -179,7 +179,7 @@ static int read_file(const char *fname, int flags, int testtype) {
+             count = 3;
+         } else {
+             assert(bufptr != NULL);
+-            strcat(bufptr, linebuf);
++            strncat(bufptr, linebuf, sizeof(g_test) - strlen(bufptr) - 1);
+         }
+     }
+     fclose(fp);

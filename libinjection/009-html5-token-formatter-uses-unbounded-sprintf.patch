@@ -1,0 +1,47 @@
+diff --git a/src/testdriver.c b/src/testdriver.c
+index 2088676..e30d031 100644
+--- a/src/testdriver.c
++++ b/src/testdriver.c
+@@ -18,7 +18,7 @@ size_t print_var(char *buf, size_t len, stoken_t *t);
+ size_t print_token(char *buf, size_t len, stoken_t *t);
+ static int read_file(const char *fname, int flags, int testtype);
+ const char *h5_type_to_string(enum html5_type x);
+-size_t print_html5_token(char *buf, size_t len, h5_state_t *hs);
++size_t print_html5_token(char *buf, size_t len, size_t bufsize, h5_state_t *hs);
+ 
+ size_t modp_rtrim(char *str, size_t len) {
+     while (len) {
+@@ -104,9 +104,10 @@ const char *h5_type_to_string(enum html5_type x) {
+ }
+ 
+ size_t
+-print_html5_token(char *buf, size_t len,
++print_html5_token(char *buf, size_t len, size_t bufsize,
+                   h5_state_t *hs) { // cppcheck-suppress constParameterPointer
+     int slen;
++    size_t remaining = len < bufsize ? bufsize - len : 0;
+     char *tmp = (char *)malloc(hs->token_len + 1);
+ 
+     assert(tmp != NULL);
+@@ -114,7 +115,20 @@ print_html5_token(char *buf, size_t len,
+     /* TODO.. encode to be printable */
+     tmp[hs->token_len] = '\0';
+     const char *h5_string = h5_type_to_string(hs->token_type);
+-    slen = sprintf(buf + len, "%s,%d,%s\n", h5_string, (int)hs->token_len, tmp);
++    if (remaining == 0) {
++        free(tmp);
++        return len;
++    }
++    slen = snprintf(buf + len, remaining, "%s,%d,%s\n", h5_string,
++                    (int)hs->token_len, tmp);
++    if (slen < 0) {
++        free(tmp);
++        return len;
++    }
++    if ((size_t)slen >= remaining) {
++        free(tmp);
++        return bufsize - 1;
++    }
+     len += (size_t)slen;
+     free(tmp);
+     return len;

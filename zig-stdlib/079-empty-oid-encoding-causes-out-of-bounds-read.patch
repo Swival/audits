@@ -1,0 +1,15 @@
+diff --git a/lib/std/crypto/codecs/asn1/Oid.zig b/lib/std/crypto/codecs/asn1/Oid.zig
+index be5bc7e7ff..9186be7a5d 100644
+--- a/lib/std/crypto/codecs/asn1/Oid.zig
++++ b/lib/std/crypto/codecs/asn1/Oid.zig
+@@ -47,8 +47,9 @@ test fromDot {
+     }
+ }
+ 
+-pub fn toDot(self: Oid, writer: anytype) @TypeOf(writer).Error!void {
++pub fn toDot(self: Oid, writer: anytype) (@TypeOf(writer).Error || error{EmptyOid})!void {
+     const encoded = self.encoded;
++    if (encoded.len == 0) return error.EmptyOid;
+     const first = @divTrunc(encoded[0], 40);
+     const second = encoded[0] - first * 40;
+     try writer.print("{d}.{d}", .{ first, second });

@@ -1,0 +1,38 @@
+diff --git a/lib/std/http/Server.zig b/lib/std/http/Server.zig
+index 7820ad6d0d..ad585152ce 100644
+--- a/lib/std/http/Server.zig
++++ b/lib/std/http/Server.zig
+@@ -335,13 +335,8 @@ pub const Request = struct {
+         options: RespondOptions,
+     ) ExpectContinueError!void {
+         assert(options.status != .@"continue");
+-        if (std.debug.runtime_safety) {
+-            for (options.extra_headers) |header| {
+-                assert(header.name.len != 0);
+-                assert(std.mem.findScalar(u8, header.name, ':') == null);
+-                assert(std.mem.findPosLinear(u8, header.name, 0, "\r\n") == null);
+-                assert(std.mem.findPosLinear(u8, header.value, 0, "\r\n") == null);
+-            }
++        for (options.extra_headers) |header| {
++            try validateExtraHeader(header);
+         }
+         try writeExpectContinue(request);
+ 
+@@ -602,8 +597,17 @@ pub const Request = struct {
+         /// The client sent an expect HTTP header value other than
+         /// "100-continue".
+         HttpExpectationFailed,
++        /// A response header name or value was not valid for HTTP output.
++        InvalidHeader,
+     };
+ 
++    fn validateExtraHeader(header: http.Header) ExpectContinueError!void {
++        if (header.name.len == 0) return error.InvalidHeader;
++        if (mem.findScalar(u8, header.name, ':') != null) return error.InvalidHeader;
++        if (mem.indexOfAny(u8, header.name, "\r\n") != null) return error.InvalidHeader;
++        if (mem.indexOfAny(u8, header.value, "\r\n") != null) return error.InvalidHeader;
++    }
++
+     pub fn writeExpectContinue(request: *Request) ExpectContinueError!void {
+         const expect = request.head.expect orelse return;
+         if (!mem.eql(u8, expect, "100-continue")) return error.HttpExpectationFailed;

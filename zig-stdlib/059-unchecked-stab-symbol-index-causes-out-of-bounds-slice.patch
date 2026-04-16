@@ -1,0 +1,21 @@
+diff --git a/lib/std/debug/MachOFile.zig b/lib/std/debug/MachOFile.zig
+index b561821969..1a8a637e08 100644
+--- a/lib/std/debug/MachOFile.zig
++++ b/lib/std/debug/MachOFile.zig
+@@ -139,6 +139,7 @@ pub fn load(gpa: Allocator, io: Io, path: []const u8, arch: std.Target.Cpu.Arch)
+         };
+         if (sym.n_type.bits.is_stab == 0) {
+             if (sym.n_strx == 0) continue;
++            if (sym.n_strx >= strings.len) return error.InvalidMachO;
+             switch (sym.n_type.bits.type) {
+                 .undf, .pbud, .indr, .abs, _ => continue,
+                 .sect => {
+@@ -157,6 +158,8 @@ pub fn load(gpa: Allocator, io: Io, path: []const u8, arch: std.Target.Cpu.Arch)
+             continue;
+         }
+ 
++        if (sym.n_strx != 0 and sym.n_strx >= strings.len) return error.InvalidMachO;
++
+         // TODO handle globals N_GSYM, and statics N_STSYM
+         //
+         // NOTE: ld64.lld and Apple's ld differ in STABS layout.

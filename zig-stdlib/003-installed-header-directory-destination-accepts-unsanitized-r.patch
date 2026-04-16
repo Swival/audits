@@ -1,0 +1,36 @@
+diff --git a/lib/std/Build/Step/Compile.zig b/lib/std/Build/Step/Compile.zig
+index fe29b77297..52ee1ed528 100644
+--- a/lib/std/Build/Step/Compile.zig
++++ b/lib/std/Build/Step/Compile.zig
+@@ -517,10 +517,23 @@ pub fn create(owner: *std.Build, options: Options) *Compile {
+     return compile;
+ }
+ 
++fn validateHeaderInstallDestRelPath(dest_rel_path: []const u8) void {
++    if (fs.path.isAbsolute(dest_rel_path)) {
++        panic("invalid header install destination path: '{s}'", .{dest_rel_path});
++    }
++    var component_it = fs.path.componentIterator(dest_rel_path);
++    while (component_it.next()) |component| {
++        if (mem.eql(u8, component.name, "..")) {
++            panic("invalid header install destination path: '{s}'", .{dest_rel_path});
++        }
++    }
++}
++
+ /// Marks the specified header for installation alongside this artifact.
+ /// When a module links with this artifact, all headers marked for installation are added to that
+ /// module's include search path.
+ pub fn installHeader(cs: *Compile, source: LazyPath, dest_rel_path: []const u8) void {
++    validateHeaderInstallDestRelPath(dest_rel_path);
+     const b = cs.step.owner;
+     const installation: HeaderInstallation = .{ .file = .{
+         .source = source.dupe(b),
+@@ -540,6 +553,7 @@ pub fn installHeadersDirectory(
+     dest_rel_path: []const u8,
+     options: HeaderInstallation.Directory.Options,
+ ) void {
++    validateHeaderInstallDestRelPath(dest_rel_path);
+     const b = cs.step.owner;
+     const installation: HeaderInstallation = .{ .directory = .{
+         .source = source.dupe(b),

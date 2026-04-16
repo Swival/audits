@@ -1,0 +1,29 @@
+diff --git a/lib/std/coff.zig b/lib/std/coff.zig
+index 7dea0f4344..b5662a7593 100644
+--- a/lib/std/coff.zig
++++ b/lib/std/coff.zig
+@@ -1089,14 +1089,23 @@ pub const Coff = struct {
+     }
+ 
+     pub fn getDataDirectories(self: *const Coff) []align(1) const ImageDataDirectory {
++        const coff_header = self.getHeader();
+         const hdr = self.getOptionalHeader();
+         const size: usize = switch (@intFromEnum(hdr.magic)) {
+             IMAGE_NT_OPTIONAL_HDR32_MAGIC => @sizeOf(OptionalHeader.PE32),
+             IMAGE_NT_OPTIONAL_HDR64_MAGIC => @sizeOf(OptionalHeader.@"PE32+"),
+             else => unreachable, // We assume we have validated the header already
+         };
++        if (coff_header.size_of_optional_header < size) return &.{};
++
+         const offset = self.coff_header_offset + @sizeOf(Header) + size;
+-        return @as([*]align(1) const ImageDataDirectory, @ptrCast(self.data[offset..]))[0..self.getNumberOfDataDirectories()];
++        if (offset > self.data.len) return &.{};
++
++        const max_count_in_optional_header = (@as(usize, coff_header.size_of_optional_header) - size) / @sizeOf(ImageDataDirectory);
++        const max_count_in_data = (self.data.len - offset) / @sizeOf(ImageDataDirectory);
++        const count = @min(@as(usize, self.getNumberOfDataDirectories()), @min(max_count_in_optional_header, max_count_in_data));
++
++        return @as([*]align(1) const ImageDataDirectory, @ptrCast(self.data[offset..]))[0..count];
+     }
+ 
+     pub fn getSymtab(self: *const Coff) ?Symtab {

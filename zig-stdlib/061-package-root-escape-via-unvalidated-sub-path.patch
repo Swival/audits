@@ -1,0 +1,37 @@
+diff --git a/lib/std/Build/Step/UpdateSourceFiles.zig b/lib/std/Build/Step/UpdateSourceFiles.zig
+index 0cc3b787c3..a072e8f90a 100644
+--- a/lib/std/Build/Step/UpdateSourceFiles.zig
++++ b/lib/std/Build/Step/UpdateSourceFiles.zig
+@@ -40,6 +40,16 @@ pub fn create(owner: *std.Build) *UpdateSourceFiles {
+     return usf;
+ }
+ 
++fn assertValidSubPath(sub_path: []const u8) void {
++    var it = fs.path.componentIterator(sub_path);
++    if (it.root() != null) @panic("sub_path must be relative to the package root");
++    while (it.next()) |component| {
++        if (std.mem.eql(u8, component.name, ".") or std.mem.eql(u8, component.name, "..")) {
++            @panic("sub_path must be normalized and stay within the package root");
++        }
++    }
++}
++
+ /// A path relative to the package root.
+ ///
+ /// Be careful with this because it updates source files. This should not be
+@@ -48,6 +58,7 @@ pub fn create(owner: *std.Build) *UpdateSourceFiles {
+ /// those changes to version control.
+ pub fn addCopyFileToSource(usf: *UpdateSourceFiles, source: std.Build.LazyPath, sub_path: []const u8) void {
+     const b = usf.step.owner;
++    assertValidSubPath(sub_path);
+     usf.output_source_files.append(b.allocator, .{
+         .contents = .{ .copy = source },
+         .sub_path = sub_path,
+@@ -63,6 +74,7 @@ pub fn addCopyFileToSource(usf: *UpdateSourceFiles, source: std.Build.LazyPath,
+ /// those changes to version control.
+ pub fn addBytesToSource(usf: *UpdateSourceFiles, bytes: []const u8, sub_path: []const u8) void {
+     const b = usf.step.owner;
++    assertValidSubPath(sub_path);
+     usf.output_source_files.append(b.allocator, .{
+         .contents = .{ .bytes = bytes },
+         .sub_path = sub_path,

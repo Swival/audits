@@ -1,0 +1,15 @@
+diff --git a/lib/std/dynamic_library.zig b/lib/std/dynamic_library.zig
+index d7cea3b3cd..736ea4d90a 100644
+--- a/lib/std/dynamic_library.zig
++++ b/lib/std/dynamic_library.zig
+@@ -490,7 +490,9 @@ pub const ElfDynLib = struct {
+                 }
+ 
+                 const bucket_index = hash % gnu_hash_header.nbuckets;
+-                const chain_index = gnu_hash_section.buckets[bucket_index] - gnu_hash_header.symoffset;
++                const bucket = gnu_hash_section.buckets[bucket_index];
++                if (bucket == 0) return null;
++                const chain_index = bucket - gnu_hash_header.symoffset;
+ 
+                 const chains = gnu_hash_section.chain;
+                 const hash_as_entry: elf.gnu_hash.ChainEntry = @bitCast(hash);

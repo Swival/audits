@@ -1,0 +1,16 @@
+diff --git a/lib/std/Io/net/HostName.zig b/lib/std/Io/net/HostName.zig
+index 6def1e2095..5b90171c3e 100644
+--- a/lib/std/Io/net/HostName.zig
++++ b/lib/std/Io/net/HostName.zig
+@@ -457,8 +457,9 @@ pub const ResolvConf = struct {
+                 },
+                 .domain, .search => {
+                     const rest = line_it.rest();
+-                    @memcpy(rc.search_buffer[0..rest.len], rest);
+-                    rc.search_len = rest.len;
++                    const search_len = @min(rest.len, max_len);
++                    @memcpy(rc.search_buffer[0..search_len], rest[0..search_len]);
++                    rc.search_len = search_len;
+                 },
+             }
+         } else |err| switch (err) {

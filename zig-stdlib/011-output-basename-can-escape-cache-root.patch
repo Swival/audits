@@ -1,0 +1,65 @@
+diff --git a/lib/std/Build/Step/Run.zig b/lib/std/Build/Step/Run.zig
+index ca631ac9c0..943410a1da 100644
+--- a/lib/std/Build/Step/Run.zig
++++ b/lib/std/Build/Step/Run.zig
+@@ -205,6 +205,18 @@ pub const CapturedStdIo = struct {
+     };
+ };
+ 
++fn validateOutputBasename(basename: []const u8) void {
++    if (basename.len == 0) @panic("basename must not be empty");
++    if (Dir.path.isAbsolute(basename)) @panic("basename must not be absolute");
++
++    var it = Dir.path.componentIterator(basename);
++    while (it.next()) |component| {
++        if (mem.eql(u8, component.name, "..")) {
++            @panic("basename must not contain '..' path components");
++        }
++    }
++}
++
+ pub fn create(owner: *std.Build, name: []const u8) *Run {
+     const run = owner.allocator.create(Run) catch @panic("OOM");
+     run.* = .{
+@@ -301,7 +313,7 @@ pub fn addPrefixedOutputFileArg(
+     basename: []const u8,
+ ) std.Build.LazyPath {
+     const b = run.step.owner;
+-    if (basename.len == 0) @panic("basename must not be empty");
++    validateOutputBasename(basename);
+ 
+     const output = b.allocator.create(Output) catch @panic("OOM");
+     output.* = .{
+@@ -440,7 +452,7 @@ pub fn addPrefixedOutputDirectoryArg(
+     prefix: []const u8,
+     basename: []const u8,
+ ) std.Build.LazyPath {
+-    if (basename.len == 0) @panic("basename must not be empty");
++    validateOutputBasename(basename);
+     const b = run.step.owner;
+ 
+     const output = b.allocator.create(Output) catch @panic("OOM");
+@@ -500,6 +512,7 @@ pub fn addDepFileOutputArg(run: *Run, basename: []const u8) std.Build.LazyPath {
+ pub fn addPrefixedDepFileOutputArg(run: *Run, prefix: []const u8, basename: []const u8) std.Build.LazyPath {
+     const b = run.step.owner;
+     assert(run.dep_output_file == null);
++    validateOutputBasename(basename);
+ 
+     const dep_file = b.allocator.create(Output) catch @panic("OOM");
+     dep_file.* = .{
+@@ -658,6 +671,7 @@ pub fn captureStdErr(run: *Run, options: CapturedStdIo.Options) std.Build.LazyPa
+     const b = run.step.owner;
+ 
+     if (run.captured_stderr) |captured| return .{ .generated = .{ .file = &captured.output.generated_file } };
++    if (options.basename) |basename| validateOutputBasename(basename);
+ 
+     const captured = b.allocator.create(CapturedStdIo) catch @panic("OOM");
+     captured.* = .{
+@@ -679,6 +693,7 @@ pub fn captureStdOut(run: *Run, options: CapturedStdIo.Options) std.Build.LazyPa
+     const b = run.step.owner;
+ 
+     if (run.captured_stdout) |captured| return .{ .generated = .{ .file = &captured.output.generated_file } };
++    if (options.basename) |basename| validateOutputBasename(basename);
+ 
+     const captured = b.allocator.create(CapturedStdIo) catch @panic("OOM");
+     captured.* = .{

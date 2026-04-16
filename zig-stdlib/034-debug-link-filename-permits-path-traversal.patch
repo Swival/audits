@@ -1,0 +1,18 @@
+diff --git a/lib/std/debug/ElfFile.zig b/lib/std/debug/ElfFile.zig
+index 8925106015..d2ebcc7f8e 100644
+--- a/lib/std/debug/ElfFile.zig
++++ b/lib/std/debug/ElfFile.zig
+@@ -178,6 +178,13 @@ pub fn load(
+         debug_link: {
+             const section = result.sections.get(.gnu_debuglink) orelse break :debug_link;
+             const debug_filename = std.mem.sliceTo(section.bytes, 0);
++            if (std.mem.indexOfAny(u8, debug_filename, "/\\") != null or
++                std.mem.indexOf(u8, debug_filename, "..") != null or
++                std.fs.path.isAbsolutePosix(debug_filename) or
++                std.fs.path.isAbsoluteWindows(debug_filename))
++            {
++                break :debug_link;
++            }
+             const crc_offset = std.mem.alignForward(usize, debug_filename.len + 1, 4);
+             if (section.bytes.len < crc_offset + 4) break :debug_link;
+             const debug_crc = std.mem.readInt(u32, section.bytes[crc_offset..][0..4], result.endian);

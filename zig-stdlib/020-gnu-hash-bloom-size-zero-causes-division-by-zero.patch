@@ -1,0 +1,13 @@
+diff --git a/lib/std/dynamic_library.zig b/lib/std/dynamic_library.zig
+index d7cea3b3cd..1800f95a3c 100644
+--- a/lib/std/dynamic_library.zig
++++ b/lib/std/dynamic_library.zig
+@@ -466,6 +466,8 @@ pub const ElfDynLib = struct {
+                 }
+             },
+             .dt_gnu_hash => |gnu_hash_header| {
++                if (gnu_hash_header.bloom_size == 0 or gnu_hash_header.nbuckets == 0) return null;
++
+                 const GnuHashSection = switch (@bitSizeOf(usize)) {
+                     32 => GnuHashSection32,
+                     64 => GnuHashSection64,

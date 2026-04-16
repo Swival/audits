@@ -1,0 +1,13 @@
+diff --git a/lib/std/Io/Dispatch.zig b/lib/std/Io/Dispatch.zig
+index 259a233d57..05a946f806 100644
+--- a/lib/std/Io/Dispatch.zig
++++ b/lib/std/Io/Dispatch.zig
+@@ -4712,7 +4712,7 @@ fn sleep(userdata: ?*anyopaque, timeout: Io.Timeout) Io.Cancelable!void {
+         return ev.yield(.{ .after = ev.timeFromTimeout(timeout) });
+     };
+     var waiter: SleepWaiter = .{
+-        .cancelable = .{ .queue = queue, .cancel = &Futex.Waiter.canceled },
++        .cancelable = .{ .queue = queue, .cancel = &SleepWaiter.canceled },
+         .timer = timer,
+     };
+     timer.as_object().set_context(&waiter);

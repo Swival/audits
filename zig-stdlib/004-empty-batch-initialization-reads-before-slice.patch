@@ -1,0 +1,22 @@
+diff --git a/lib/std/Io.zig b/lib/std/Io.zig
+index ba20eccc4e..68b4d7773c 100644
+--- a/lib/std/Io.zig
++++ b/lib/std/Io.zig
+@@ -484,6 +484,17 @@ pub const Batch = struct {
+     /// determines the maximum number of active operations that can be
+     /// submitted via `add` and `addAt`.
+     pub fn init(storage: []Operation.Storage) Batch {
++        if (storage.len == 0) {
++            return .{
++                .storage = storage,
++                .unused = .empty,
++                .submitted = .empty,
++                .pending = .empty,
++                .completed = .empty,
++                .userdata = null,
++            };
++        }
++
+         var prev: Operation.OptionalIndex = .none;
+         for (storage, 0..) |*operation, index| {
+             operation.* = .{ .unused = .{ .prev = prev, .next = .fromIndex(index + 1) } };

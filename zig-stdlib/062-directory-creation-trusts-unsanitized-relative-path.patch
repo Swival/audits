@@ -1,0 +1,32 @@
+diff --git a/lib/std/Build/Step/UpdateSourceFiles.zig b/lib/std/Build/Step/UpdateSourceFiles.zig
+index 0cc3b787c3..869d50fbda 100644
+--- a/lib/std/Build/Step/UpdateSourceFiles.zig
++++ b/lib/std/Build/Step/UpdateSourceFiles.zig
+@@ -69,6 +69,17 @@ pub fn addBytesToSource(usf: *UpdateSourceFiles, bytes: []const u8, sub_path: []
+     }) catch @panic("OOM");
+ }
+ 
++fn isValidSubPath(sub_path: []const u8) bool {
++    if (fs.path.isAbsolute(sub_path)) return false;
++
++    var it = fs.path.componentIterator(sub_path);
++    while (it.next()) |component| {
++        if (std.mem.eql(u8, component.name, ".") or std.mem.eql(u8, component.name, "..")) return false;
++    }
++
++    return true;
++}
++
+ fn make(step: *Step, options: Step.MakeOptions) !void {
+     _ = options;
+     const b = step.owner;
+@@ -77,6 +88,9 @@ fn make(step: *Step, options: Step.MakeOptions) !void {
+ 
+     var any_miss = false;
+     for (usf.output_source_files.items) |output_source_file| {
++        if (!isValidSubPath(output_source_file.sub_path)) {
++            return step.fail("invalid output path '{s}'", .{output_source_file.sub_path});
++        }
+         if (fs.path.dirname(output_source_file.sub_path)) |dirname| {
+             b.build_root.handle.createDirPath(io, dirname) catch |err| {
+                 return step.fail("unable to make path '{f}{s}': {t}", .{ b.build_root, dirname, err });

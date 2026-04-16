@@ -1,0 +1,20 @@
+diff --git a/lib/std/Build/Step/InstallArtifact.zig b/lib/std/Build/Step/InstallArtifact.zig
+index aafd18f01c..ec9b3bc971 100644
+--- a/lib/std/Build/Step/InstallArtifact.zig
++++ b/lib/std/Build/Step/InstallArtifact.zig
+@@ -174,6 +174,15 @@ fn make(step: *Step, options: Step.MakeOptions) !void {
+ 
+         for (install_artifact.artifact.installed_headers.items) |installation| switch (installation) {
+             .file => |file| {
++                if (fs.path.isAbsolute(file.dest_rel_path)) {
++                    return step.fail("header install path must be relative, found '{s}'", .{file.dest_rel_path});
++                }
++                var it = std.mem.tokenizeAny(u8, file.dest_rel_path, "/\\");
++                while (it.next()) |component| {
++                    if (std.mem.eql(u8, component, ".") or std.mem.eql(u8, component, "..")) {
++                        return step.fail("header install path must be normalized, found '{s}'", .{file.dest_rel_path});
++                    }
++                }
+                 const full_h_path = b.getInstallPath(h_dir, file.dest_rel_path);
+                 const p = try step.installFile(file.source, full_h_path);
+                 all_cached = all_cached and p == .fresh;

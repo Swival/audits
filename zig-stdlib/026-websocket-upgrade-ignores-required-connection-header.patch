@@ -1,0 +1,69 @@
+diff --git a/lib/std/http/Server.zig b/lib/std/http/Server.zig
+index 7820ad6d0d..dfc580fc0c 100644
+--- a/lib/std/http/Server.zig
++++ b/lib/std/http/Server.zig
+@@ -225,6 +225,14 @@ pub const Request = struct {
+             return @bitCast(array.*);
+         }
+ 
++        fn headerContainsToken(value: []const u8, token: []const u8) bool {
++            var it = mem.splitScalar(u8, value, ',');
++            while (it.next()) |item| {
++                if (std.ascii.eqlIgnoreCase(mem.trim(u8, item, " \t"), token)) return true;
++            }
++            return false;
++        }
++
+         /// Help the programmer avoid bugs by calling this when the string
+         /// memory of `Head` becomes invalidated.
+         fn invalidateStrings(h: *Head) void {
+@@ -505,17 +513,23 @@ pub const Request = struct {
+ 
+         var sec_websocket_key: ?[]const u8 = null;
+         var upgrade_name: ?[]const u8 = null;
++        var connection_has_upgrade = false;
+         var it = request.iterateHeaders();
+         while (it.next()) |header| {
+             if (std.ascii.eqlIgnoreCase(header.name, "sec-websocket-key")) {
+                 sec_websocket_key = header.value;
+             } else if (std.ascii.eqlIgnoreCase(header.name, "upgrade")) {
+                 upgrade_name = header.value;
++            } else if (std.ascii.eqlIgnoreCase(header.name, "connection")) {
++                connection_has_upgrade = connection_has_upgrade or Head.headerContainsToken(header.value, "upgrade");
+             }
+         }
+ 
+         const name = upgrade_name orelse return .none;
+-        if (std.ascii.eqlIgnoreCase(name, "websocket")) return .{ .websocket = sec_websocket_key };
++        if (std.ascii.eqlIgnoreCase(name, "websocket")) {
++            if (!connection_has_upgrade) return .none;
++            return .{ .websocket = sec_websocket_key };
++        }
+         return .{ .other = name };
+     }
+ 
+@@ -531,6 +545,15 @@ pub const Request = struct {
+     pub fn respondWebSocket(request: *Request, options: WebSocketOptions) ExpectContinueError!WebSocket {
+         if (request.head.expect != null) return error.HttpExpectationFailed;
+ 
++        var has_connection_upgrade = false;
++        var it = request.iterateHeaders();
++        while (it.next()) |header| {
++            if (std.ascii.eqlIgnoreCase(header.name, "connection")) {
++                has_connection_upgrade = has_connection_upgrade or Head.headerContainsToken(header.value, "upgrade");
++            }
++        }
++        if (!has_connection_upgrade) return error.HttpConnectionHeaderUnsupported;
++
+         const out = request.server.out;
+         const version: http.Version = .@"HTTP/1.1";
+         const status: http.Status = .switching_protocols;
+@@ -602,6 +625,8 @@ pub const Request = struct {
+         /// The client sent an expect HTTP header value other than
+         /// "100-continue".
+         HttpExpectationFailed,
++        /// The request is missing the required `Connection: Upgrade` token.
++        HttpConnectionHeaderUnsupported,
+     };
+ 
+     pub fn writeExpectContinue(request: *Request) ExpectContinueError!void {

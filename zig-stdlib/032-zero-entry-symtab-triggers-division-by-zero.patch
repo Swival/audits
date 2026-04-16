@@ -1,0 +1,12 @@
+diff --git a/lib/std/debug/ElfFile.zig b/lib/std/debug/ElfFile.zig
+index 8925106015..003aa22169 100644
+--- a/lib/std/debug/ElfFile.zig
++++ b/lib/std/debug/ElfFile.zig
+@@ -255,6 +255,7 @@ pub fn searchSymtab(ef: *ElfFile, gpa: Allocator, vaddr: u64) error{
+     const symtab = ef.symtab orelse return error.NoSymtab;
+     const strtab = ef.strtab orelse return error.NoStrtab;
+ 
++    if (symtab.entry_size == 0) return error.BadSymtab;
+     if (symtab.bytes.len % symtab.entry_size != 0) return error.BadSymtab;
+ 
+     const swap_endian = ef.endian != @import("builtin").cpu.arch.endian();

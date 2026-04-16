@@ -1,0 +1,11 @@
+diff --git a/lib/std/Build/Step/CheckObject.zig b/lib/std/Build/Step/CheckObject.zig
+index baaf9cb992..49efe0fbc8 100644
+--- a/lib/std/Build/Step/CheckObject.zig
++++ b/lib/std/Build/Step/CheckObject.zig
+@@ -1788,6 +1788,7 @@ const ElfDumper = struct {
+                 .p64 => @sizeOf(u64),
+             };
+             const strtab_off = (num + 1) * ptr_size;
++            if (strtab_off > raw.len) return error.InvalidArchiveSymtab;
+             const strtab_len = raw.len - strtab_off;
+             const strtab = raw[strtab_off..][0..strtab_len];

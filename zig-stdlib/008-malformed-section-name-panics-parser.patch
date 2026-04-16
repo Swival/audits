@@ -1,0 +1,43 @@
+diff --git a/lib/std/coff.zig b/lib/std/coff.zig
+index 7dea0f4344..f1056d44c1 100644
+--- a/lib/std/coff.zig
++++ b/lib/std/coff.zig
+@@ -473,7 +473,7 @@ pub const SectionHeader = extern struct {
+     pub fn getNameOffset(self: SectionHeader) ?u32 {
+         if (self.name[0] != '/') return null;
+         const len = std.mem.findScalar(u8, &self.name, @as(u8, 0)) orelse self.name.len;
+-        const offset = std.fmt.parseInt(u32, self.name[1..len], 10) catch unreachable;
++        const offset = std.fmt.parseInt(u32, self.name[1..len], 10) catch return null;
+         return offset;
+     }
+ 
+@@ -953,6 +953,7 @@ pub const Error = error{
+     InvalidPEMagic,
+     InvalidPEHeader,
+     InvalidMachine,
++    InvalidSectionName,
+     MissingPEHeader,
+     MissingCoffSection,
+     MissingStringTable,
+@@ -1140,10 +1141,10 @@ pub const Coff = struct {
+         return out_buff;
+     }
+ 
+-    pub fn getSectionName(self: *const Coff, sect_hdr: *align(1) const SectionHeader) error{InvalidStrtabSize}![]const u8 {
++    pub fn getSectionName(self: *const Coff, sect_hdr: *align(1) const SectionHeader) error{InvalidSectionName, InvalidStrtabSize}![]const u8 {
+         const name = sect_hdr.getName() orelse blk: {
+             const strtab = (try self.getStrtab()).?;
+-            const name_offset = sect_hdr.getNameOffset().?;
++            const name_offset = sect_hdr.getNameOffset() orelse return error.InvalidSectionName;
+             break :blk strtab.get(name_offset);
+         };
+         return name;
+@@ -1152,7 +1153,7 @@ pub const Coff = struct {
+     pub fn getSectionByName(self: *const Coff, comptime name: []const u8) ?*align(1) const SectionHeader {
+         for (self.getSectionHeaders()) |*sect| {
+             const section_name = self.getSectionName(sect) catch |e| switch (e) {
+-                error.InvalidStrtabSize => continue, //ignore invalid(?) strtab entries - see also GitHub issue #15238
++                error.InvalidSectionName, error.InvalidStrtabSize => continue, //ignore invalid(?) section names/strtab entries - see also GitHub issue #15238
+             };
+             if (mem.eql(u8, section_name, name)) {
+                 return sect;

@@ -1,0 +1,21 @@
+diff --git a/lib/std/Io/Kqueue.zig b/lib/std/Io/Kqueue.zig
+index 91d1887dd2..02a7d1031d 100644
+--- a/lib/std/Io/Kqueue.zig
++++ b/lib/std/Io/Kqueue.zig
+@@ -82,6 +82,7 @@ const Fiber = struct {
+     awaiting_completions: std.StaticBitSet(3),
+ 
+     const finished: ?*Fiber = @ptrFromInt(@alignOf(Thread));
++    const consumed: ?*Fiber = @ptrFromInt(2 * @alignOf(Thread));
+ 
+     const max_result_align: Alignment = .@"16";
+     const max_result_size = max_result_align.forward(64);
+@@ -738,6 +739,8 @@ fn await(
+     const future_fiber: *Fiber = @ptrCast(@alignCast(any_future));
+     if (@atomicLoad(?*Fiber, &future_fiber.awaiter, .acquire) != Fiber.finished)
+         k.yield(null, .{ .register_awaiter = &future_fiber.awaiter });
++    if (@cmpxchgStrong(?*Fiber, &future_fiber.awaiter, Fiber.finished, Fiber.consumed, .acq_rel, .acquire) != null)
++        unreachable;
+     @memcpy(result, future_fiber.resultBytes(result_alignment));
+     k.recycle(future_fiber);
+ }

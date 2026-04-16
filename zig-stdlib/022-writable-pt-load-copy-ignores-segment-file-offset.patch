@@ -1,0 +1,13 @@
+diff --git a/lib/std/dynamic_library.zig b/lib/std/dynamic_library.zig
+index d7cea3b3cd..3940b03329 100644
+--- a/lib/std/dynamic_library.zig
++++ b/lib/std/dynamic_library.zig
+@@ -321,7 +321,7 @@ pub const ElfDynLib = struct {
+                                 -1,
+                                 0,
+                             );
+-                            @memcpy(sect_mem[0..ph.p_filesz], file_bytes[0..ph.p_filesz]);
++                            @memcpy(sect_mem[extra_bytes .. extra_bytes + ph.p_filesz], file_bytes[ph.p_offset .. ph.p_offset + ph.p_filesz]);
+                         }
+                     },
+                     else => {},

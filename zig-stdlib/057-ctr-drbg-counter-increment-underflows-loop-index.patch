@@ -1,0 +1,16 @@
+diff --git a/lib/std/crypto/ml_kem.zig b/lib/std/crypto/ml_kem.zig
+index 468be166d0..f9721c66af 100644
+--- a/lib/std/crypto/ml_kem.zig
++++ b/lib/std/crypto/ml_kem.zig
+@@ -1725,8 +1725,9 @@ const NistDRBG = struct {
+     v: [16]u8,
+ 
+     fn incV(g: *NistDRBG) void {
+-        var j: usize = 15;
+-        while (j >= 0) : (j -= 1) {
++        var j: usize = g.v.len;
++        while (j > 0) {
++            j -= 1;
+             if (g.v[j] == 255) {
+                 g.v[j] = 0;
+             } else {

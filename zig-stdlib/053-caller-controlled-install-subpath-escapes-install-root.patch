@@ -1,0 +1,30 @@
+diff --git a/lib/std/Build/Step/InstallArtifact.zig b/lib/std/Build/Step/InstallArtifact.zig
+index aafd18f01c..fbaaadf6e5 100644
+--- a/lib/std/Build/Step/InstallArtifact.zig
++++ b/lib/std/Build/Step/InstallArtifact.zig
+@@ -58,6 +58,16 @@ pub const Options = struct {
+ 
+ pub fn create(owner: *std.Build, artifact: *Step.Compile, options: Options) *InstallArtifact {
+     const install_artifact = owner.allocator.create(InstallArtifact) catch @panic("OOM");
++    const dest_sub_path = options.dest_sub_path orelse artifact.out_filename;
++    if (fs.path.isAbsolute(dest_sub_path)) {
++        std.debug.panic("dest_sub_path must be relative, found absolute path '{s}'", .{dest_sub_path});
++    }
++    var dest_sub_path_it = fs.path.componentIterator(dest_sub_path);
++    while (dest_sub_path_it.next()) |component| {
++        if (std.mem.eql(u8, component.name, "..")) {
++            std.debug.panic("dest_sub_path must not contain parent traversal: '{s}'", .{dest_sub_path});
++        }
++    }
+     const dest_dir: ?InstallDir = switch (options.dest_dir) {
+         .disabled => null,
+         .default => switch (artifact.kind) {
+@@ -104,7 +114,7 @@ pub fn create(owner: *std.Build, artifact: *Step.Compile, options: Options) *Ins
+             .name_only_filename = artifact.name_only_filename.?,
+         } else null,
+ 
+-        .dest_sub_path = options.dest_sub_path orelse artifact.out_filename,
++        .dest_sub_path = dest_sub_path,
+ 
+         .emitted_bin = null,
+         .emitted_pdb = null,

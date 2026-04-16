@@ -1,0 +1,39 @@
+diff --git a/lib/std/Build/Step/WriteFile.zig b/lib/std/Build/Step/WriteFile.zig
+index 3613fa3fef..e6c0f2cf01 100644
+--- a/lib/std/Build/Step/WriteFile.zig
++++ b/lib/std/Build/Step/WriteFile.zig
+@@ -153,6 +153,8 @@ pub fn addCopyDirectory(
+     sub_path: []const u8,
+     options: Directory.Options,
+ ) std.Build.LazyPath {
++    validateCopyDirectorySubPath(sub_path);
++
+     const b = write_file.step.owner;
+     const gpa = b.allocator;
+     const dir = Directory{
+@@ -178,6 +180,25 @@ pub fn getDirectory(write_file: *WriteFile) std.Build.LazyPath {
+     return .{ .generated = .{ .file = &write_file.generated_directory } };
+ }
+ 
++fn validateCopyDirectorySubPath(sub_path: []const u8) void {
++    if (Dir.path.isAbsolute(sub_path)) {
++        std.debug.panic(
++            "addCopyDirectory destination must be relative and non-traversing, found absolute path '{s}'",
++            .{sub_path},
++        );
++    }
++
++    var it = Dir.path.componentIterator(sub_path);
++    while (it.next()) |component| {
++        if (std.mem.eql(u8, component.name, "..")) {
++            std.debug.panic(
++                "addCopyDirectory destination must be relative and non-traversing, found '{s}'",
++                .{sub_path},
++            );
++        }
++    }
++}
++
+ fn maybeUpdateName(write_file: *WriteFile) void {
+     if (write_file.files.items.len == 1 and write_file.directories.items.len == 0) {
+         // First time adding a file; update name.

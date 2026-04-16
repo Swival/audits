@@ -1,0 +1,15 @@
+diff --git a/lib/std/debug/SelfInfo/Windows.zig b/lib/std/debug/SelfInfo/Windows.zig
+index 50684e9b2a..fd1b25221f 100644
+--- a/lib/std/debug/SelfInfo/Windows.zig
++++ b/lib/std/debug/SelfInfo/Windows.zig
+@@ -35,8 +35,8 @@ pub fn getSymbols(
+     symbols: *std.ArrayList(std.debug.Symbol),
+ ) Error!void {
+     const gpa = std.debug.getDebugInfoAllocator();
+-    try si.lock.lockShared(io);
+-    defer si.lock.unlockShared(io);
++    try si.lock.lock(io);
++    defer si.lock.unlock(io);
+     const module = try si.findModule(gpa, address);
+     const di = try module.getDebugInfo(gpa, io);
+     return di.getSymbols(

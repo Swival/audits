@@ -1,0 +1,13 @@
+diff --git a/lib/std/Build/WebServer.zig b/lib/std/Build/WebServer.zig
+index ea7e0a6e26..51481cd614 100644
+--- a/lib/std/Build/WebServer.zig
++++ b/lib/std/Build/WebServer.zig
+@@ -141,8 +141,6 @@ pub fn deinit(ws: *WebServer) void {
+         t.await();
+     }
+     if (ws.tcp_server) |*s| s.deinit();
+-
+-    gpa.free(ws.step_names_trailing);
+ }
+ pub fn start(ws: *WebServer) error{AlreadyReported}!void {
+     assert(ws.tcp_server == null);

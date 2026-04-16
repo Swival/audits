@@ -1,0 +1,83 @@
+diff --git a/lib/std/crypto/benchmark.zig b/lib/std/crypto/benchmark.zig
+index 3090dac0cd..9a4b114b1f 100644
+--- a/lib/std/crypto/benchmark.zig
++++ b/lib/std/crypto/benchmark.zig
+@@ -345,7 +345,7 @@ pub fn benchmarkAead(comptime Aead: anytype, comptime bytes: comptime_int, io: I
+     var offset: usize = 0;
+     const start = benchTime(io);
+     while (offset < bytes) : (offset += in.len) {
+-        Aead.encrypt(in[0..], tag[0..], in[0..], &[_]u8{}, nonce, key);
++        try Aead.encrypt(in[0..], tag[0..], in[0..], &[_]u8{}, nonce, key);
+         try Aead.decrypt(in[0..], in[0..], tag, &[_]u8{}, nonce, key);
+     }
+     mem.doNotOptimizeAway(&in);
+diff --git a/lib/std/crypto/isap.zig b/lib/std/crypto/isap.zig
+index 73fd959b15..ade84e9c39 100644
+--- a/lib/std/crypto/isap.zig
++++ b/lib/std/crypto/isap.zig
+@@ -1,11 +1,11 @@
+ const std = @import("std");
+ const crypto = std.crypto;
+-const debug = std.debug;
+ const mem = std.mem;
+ const math = std.math;
+ const testing = std.testing;
+ const Ascon = crypto.core.Ascon(.big);
+ const AuthenticationError = crypto.errors.AuthenticationError;
++const LengthError = error{InvalidLength};
+ 
+ /// ISAPv2 is an authenticated encryption system hardened against side channels and fault attacks.
+ /// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/round-2/spec-doc-rnd2/isap-spec-round2.pdf
+@@ -110,8 +110,8 @@ pub const IsapA128A = struct {
+         return tag;
+     }
+ 
+-    fn xor(out: []u8, in: []const u8, npub: [16]u8, key: [16]u8) void {
+-        debug.assert(in.len == out.len);
++    fn xor(out: []u8, in: []const u8, npub: [16]u8, key: [16]u8) LengthError!void {
++        if (in.len != out.len) return error.InvalidLength;
+ 
+         const nb = trickle(key, iv3, npub[0..], 24);
+         var isap = IsapA128A{
+@@ -142,8 +142,8 @@ pub const IsapA128A = struct {
+         isap.st.secureZero();
+     }
+ 
+-    pub fn encrypt(c: []u8, tag: *[tag_length]u8, m: []const u8, ad: []const u8, npub: [nonce_length]u8, key: [key_length]u8) void {
+-        xor(c, m, npub, key);
++    pub fn encrypt(c: []u8, tag: *[tag_length]u8, m: []const u8, ad: []const u8, npub: [nonce_length]u8, key: [key_length]u8) LengthError!void {
++        try xor(c, m, npub, key);
+         tag.* = mac(c, ad, npub, key);
+     }
+ 
+@@ -153,10 +153,10 @@ pub const IsapA128A = struct {
+     /// `ad`: Associated data
+     /// `npub`: Public nonce
+     /// `k`: Private key
+-    /// Asserts `c.len == m.len`.
++    /// Returns `error.InvalidLength` if `c.len != m.len`.
+     ///
+     /// Contents of `m` are undefined if an error is returned.
+-    pub fn decrypt(m: []u8, c: []const u8, tag: [tag_length]u8, ad: []const u8, npub: [nonce_length]u8, key: [key_length]u8) AuthenticationError!void {
++    pub fn decrypt(m: []u8, c: []const u8, tag: [tag_length]u8, ad: []const u8, npub: [nonce_length]u8, key: [key_length]u8) (AuthenticationError || LengthError)!void {
+         var computed_tag = mac(c, ad, npub, key);
+         const verify = crypto.timing_safe.eql([tag_length]u8, computed_tag, tag);
+         if (!verify) {
+@@ -164,7 +164,7 @@ pub const IsapA128A = struct {
+             @memset(m, undefined);
+             return error.AuthenticationFailed;
+         }
+-        xor(m, c, npub, key);
++        try xor(m, c, npub, key);
+     }
+ };
+ 
+@@ -175,7 +175,7 @@ test "ISAP" {
+     const ad = "ad";
+     var msg = "test";
+     var c: [msg.len]u8 = undefined;
+-    IsapA128A.encrypt(c[0..], &tag, msg[0..], ad, n, k);
++    try IsapA128A.encrypt(c[0..], &tag, msg[0..], ad, n, k);
+     try testing.expect(mem.eql(u8, &[_]u8{ 0x8f, 0x68, 0x03, 0x8d }, c[0..]));
+     try testing.expect(mem.eql(u8, &[_]u8{ 0x6c, 0x25, 0xe8, 0xe2, 0xe1, 0x1f, 0x38, 0xe9, 0x80, 0x75, 0xde, 0xd5, 0x2d, 0xb2, 0x31, 0x82 }, tag[0..]));
+     try IsapA128A.decrypt(c[0..], c[0..], tag, ad, n, k);

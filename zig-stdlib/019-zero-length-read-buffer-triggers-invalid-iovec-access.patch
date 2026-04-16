@@ -1,0 +1,12 @@
+diff --git a/lib/std/Io/Kqueue.zig b/lib/std/Io/Kqueue.zig
+index 91d1887dd2..5aa17f6abb 100644
+--- a/lib/std/Io/Kqueue.zig
++++ b/lib/std/Io/Kqueue.zig
+@@ -1211,6 +1211,7 @@ fn netRead(userdata: ?*anyopaque, fd: net.Socket.Handle, data: [][]u8) net.Strea
+         }
+     }
+     const dest = iovecs_buffer[0..i];
++    if (dest.len == 0) return 0;
+     assert(dest[0].len > 0);
+ 
+     while (true) {

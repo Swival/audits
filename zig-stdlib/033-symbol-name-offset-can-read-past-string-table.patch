@@ -1,0 +1,16 @@
+diff --git a/lib/std/debug/ElfFile.zig b/lib/std/debug/ElfFile.zig
+index 8925106015..cc5cc1910c 100644
+--- a/lib/std/debug/ElfFile.zig
++++ b/lib/std/debug/ElfFile.zig
+@@ -292,8 +292,10 @@ pub fn searchSymtab(ef: *ElfFile, gpa: Allocator, vaddr: u64) error{
+             var sym = symbols[search_table[sym_index_index]];
+             if (swap_endian) std.mem.byteSwapAllFields(Sym, &sym);
+             if (vaddr < sym.st_value or vaddr >= sym.st_value + sym.st_size) return .unknown;
++            const name_off = std.math.cast(usize, sym.st_name) orelse return .unknown;
++            if (name_off >= strtab.len) return .unknown;
+             return .{
+-                .name = std.mem.sliceTo(strtab[sym.st_name..], 0),
++                .name = std.mem.sliceTo(strtab[name_off..], 0),
+                 .compile_unit_name = null,
+                 .source_location = null,
+             };

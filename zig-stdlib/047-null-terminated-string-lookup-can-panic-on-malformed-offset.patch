@@ -1,0 +1,17 @@
+diff --git a/lib/std/zig/Zoir.zig b/lib/std/zig/Zoir.zig
+index d82b8f1861..051f57b5fb 100644
+--- a/lib/std/zig/Zoir.zig
++++ b/lib/std/zig/Zoir.zig
+@@ -228,8 +228,11 @@ pub const Node = union(enum) {
+ pub const NullTerminatedString = enum(u32) {
+     _,
+     pub fn get(nts: NullTerminatedString, zoir: Zoir) [:0]const u8 {
+-        const idx = std.mem.findScalar(u8, zoir.string_bytes[@intFromEnum(nts)..], 0).?;
+-        return zoir.string_bytes[@intFromEnum(nts)..][0..idx :0];
++        const start = @intFromEnum(nts);
++        if (start >= zoir.string_bytes.len) return "";
++        const bytes = zoir.string_bytes[start..];
++        const idx = std.mem.findScalar(u8, bytes, 0) orelse return "";
++        return bytes[0..idx :0];
+     }
+ };

@@ -1,0 +1,13 @@
+diff --git a/lib/std/Uri.zig b/lib/std/Uri.zig
+index 352af5aed7..1066352be4 100644
+--- a/lib/std/Uri.zig
++++ b/lib/std/Uri.zig
+@@ -264,7 +264,7 @@ pub fn parseAfterScheme(scheme: []const u8, text: []const u8) ParseError!Uri {
+         }
+ 
+         if (start_of_host >= end_of_host) return error.InvalidFormat;
+-        uri.host = .{ .percent_encoded = authority[start_of_host..end_of_host] };
++        uri.host = try validateHostComponent(.{ .percent_encoded = authority[start_of_host..end_of_host] });
+     }
+ 
+     const path_start = i;

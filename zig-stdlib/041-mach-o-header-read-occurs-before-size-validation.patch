@@ -1,0 +1,14 @@
+diff --git a/lib/std/Build/Step/CheckObject.zig b/lib/std/Build/Step/CheckObject.zig
+index baaf9cb992..9591ad6a2f 100644
+--- a/lib/std/Build/Step/CheckObject.zig
++++ b/lib/std/Build/Step/CheckObject.zig
+@@ -1577,6 +1577,9 @@ const MachODumper = struct {
+ 
+     fn parseAndDumpObject(step: *Step, check: Check, bytes: []const u8) ![]const u8 {
+         const gpa = step.owner.allocator;
++        if (bytes.len < @sizeOf(macho.mach_header_64)) {
++            return error.UnexpectedEndOfFile;
++        }
+         const hdr = @as(*align(1) const macho.mach_header_64, @ptrCast(bytes.ptr)).*;
+         if (hdr.magic != macho.MH_MAGIC_64) {
+             return error.InvalidMagicNumber;

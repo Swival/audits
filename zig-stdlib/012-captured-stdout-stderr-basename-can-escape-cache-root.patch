@@ -1,0 +1,40 @@
+diff --git a/lib/std/Build/Step/Run.zig b/lib/std/Build/Step/Run.zig
+index ca631ac9c0..633bcf9153 100644
+--- a/lib/std/Build/Step/Run.zig
++++ b/lib/std/Build/Step/Run.zig
+@@ -651,6 +651,17 @@ pub fn addCheck(run: *Run, new_check: StdIo.Check) void {
+     }
+ }
+ 
++fn dupeCapturedBasename(run: *Run, basename: []const u8) []const u8 {
++    if (basename.len == 0) @panic("basename must not be empty");
++    if (!mem.eql(u8, Dir.path.basename(basename), basename) or
++        mem.eql(u8, basename, ".") or
++        mem.eql(u8, basename, ".."))
++    {
++        @panic("basename must be a single path component");
++    }
++    return run.step.owner.dupe(basename);
++}
++
+ pub fn captureStdErr(run: *Run, options: CapturedStdIo.Options) std.Build.LazyPath {
+     assert(run.stdio != .inherit);
+     assert(run.stdio != .zig_test);
+@@ -663,7 +674,7 @@ pub fn captureStdErr(run: *Run, options: CapturedStdIo.Options) std.Build.LazyPa
+     captured.* = .{
+         .output = .{
+             .prefix = "",
+-            .basename = if (options.basename) |basename| b.dupe(basename) else "stderr",
++            .basename = if (options.basename) |basename| dupeCapturedBasename(run, basename) else "stderr",
+             .generated_file = .{ .step = &run.step },
+         },
+         .trim_whitespace = options.trim_whitespace,
+@@ -684,7 +695,7 @@ pub fn captureStdOut(run: *Run, options: CapturedStdIo.Options) std.Build.LazyPa
+     captured.* = .{
+         .output = .{
+             .prefix = "",
+-            .basename = if (options.basename) |basename| b.dupe(basename) else "stdout",
++            .basename = if (options.basename) |basename| dupeCapturedBasename(run, basename) else "stdout",
+             .generated_file = .{ .step = &run.step },
+         },
+         .trim_whitespace = options.trim_whitespace,

@@ -1,0 +1,58 @@
+diff --git a/lib/std/tar.zig b/lib/std/tar.zig
+index 88154f211e..80df3fa5c3 100644
+--- a/lib/std/tar.zig
++++ b/lib/std/tar.zig
+@@ -634,6 +634,15 @@ pub fn extract(io: Io, dir: Io.Dir, reader: *Io.Reader, options: ExtractOptions)
+             },
+             .sym_link => {
+                 const link_name = file.link_name;
++                validateSymlinkTarget(file_name, link_name) catch |err| {
++                    const d = options.diagnostics orelse return error.UnableToCreateSymLink;
++                    try d.errors.append(d.allocator, .{ .unable_to_create_sym_link = .{
++                        .code = err,
++                        .file_name = try d.allocator.dupe(u8, file_name),
++                        .link_name = try d.allocator.dupe(u8, link_name),
++                    } });
++                    continue;
++                };
+                 createDirAndSymlink(io, dir, link_name, file_name) catch |err| {
+                     const d = options.diagnostics orelse return error.UnableToCreateSymLink;
+                     try d.errors.append(d.allocator, .{ .unable_to_create_sym_link = .{
+@@ -673,6 +682,26 @@ fn createDirAndSymlink(io: Io, dir: Io.Dir, link_name: []const u8, file_name: []
+     };
+ }
+ 
++fn validateSymlinkTarget(file_name: []const u8, link_name: []const u8) error{Invalid}!void {
++    if (link_name.len > 0 and link_name[0] == '/') return error.Invalid;
++
++    var depth: usize = 0;
++    var file_it = std.mem.tokenizeScalar(u8, file_name, '/');
++    while (file_it.next()) |_| depth += 1;
++    depth -|= 1;
++
++    var link_it = std.mem.tokenizeScalar(u8, link_name, '/');
++    while (link_it.next()) |component| {
++        if (std.mem.eql(u8, component, ".")) continue;
++        if (std.mem.eql(u8, component, "..")) {
++            if (depth == 0) return error.Invalid;
++            depth -= 1;
++            continue;
++        }
++        depth += 1;
++    }
++}
++
+ fn sanitizePath(buffer: []u8, path: []const u8, strip_components: u32) error{Invalid}!usize {
+     if (path.len == 0 or path[0] == '/') return error.Invalid;
+     var i: usize = 0;
+@@ -918,6 +947,11 @@ test "header parse mode" {
+ test "create file and symlink" {
+     const io = testing.io;
+ 
++    try validateSymlinkTarget("b/symlink", "../a/file");
++    try validateSymlinkTarget("d/e/f/symlink2", "../../../file1");
++    try testing.expectError(error.Invalid, validateSymlinkTarget("symlink1", "/file1"));
++    try testing.expectError(error.Invalid, validateSymlinkTarget("d/e/f/symlink2", "../../../../file1"));
++
+     var root = testing.tmpDir(.{});
+     defer root.cleanup();

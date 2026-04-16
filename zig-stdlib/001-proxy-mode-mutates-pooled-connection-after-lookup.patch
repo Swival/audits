@@ -1,0 +1,82 @@
+diff --git a/lib/std/http/Client.zig b/lib/std/http/Client.zig
+index 660c520d4e..fd720ec932 100644
+--- a/lib/std/http/Client.zig
++++ b/lib/std/http/Client.zig
+@@ -78,6 +78,7 @@ pub const ConnectionPool = struct {
+         host: HostName,
+         port: u16,
+         protocol: Protocol,
++        proxied: bool,
+     };
+ 
+     /// Finds and acquires a connection from the connection pool matching the criteria.
+@@ -93,6 +94,7 @@ pub const ConnectionPool = struct {
+             const connection: *Connection = @alignCast(@fieldParentPtr("pool_node", node));
+             if (connection.protocol != criteria.protocol) continue;
+             if (connection.port != criteria.port) continue;
++            if (connection.proxied != criteria.proxied) continue;
+ 
+             // Domain names are case-insensitive (RFC 5890, Section 2.3.2.4)
+             if (!connection.host().eql(criteria.host)) continue;
+@@ -1436,6 +1438,7 @@ pub const ConnectTcpOptions = struct {
+     host: HostName,
+     port: u16,
+     protocol: Protocol,
++    proxied: bool = false,
+ 
+     proxied_host: ?HostName = null,
+     proxied_port: ?u16 = null,
+@@ -1455,6 +1458,7 @@ pub fn connectTcpOptions(client: *Client, options: ConnectTcpOptions) ConnectTcp
+         .host = proxied_host,
+         .port = proxied_port,
+         .protocol = protocol,
++        .proxied = options.proxied,
+     })) |conn| return conn;
+ 
+     var stream = try host.connect(io, port, .{ .mode = .stream });
+@@ -1469,11 +1473,13 @@ pub fn connectTcpOptions(client: *Client, options: ConnectTcpOptions) ConnectTcp
+                 error.Canceled => |e| return e,
+                 else => return error.TlsInitializationFailed,
+             };
++            tc.connection.proxied = options.proxied;
+             client.connection_pool.addUsed(io, &tc.connection);
+             return &tc.connection;
+         },
+         .plain => {
+             const pc = try Connection.Plain.create(client, proxied_host, proxied_port, stream);
++            pc.connection.proxied = options.proxied;
+             client.connection_pool.addUsed(io, &pc.connection);
+             return &pc.connection;
+         },
+@@ -1492,6 +1498,7 @@ pub fn connectUnix(client: *Client, path: []const u8) ConnectUnixError!*Connecti
+         .host = path,
+         .port = 0,
+         .protocol = .plain,
++        .proxied = false,
+     })) |node|
+         return node;
+ 
+@@ -1534,6 +1541,7 @@ pub fn connectProxied(
+         .host = proxied_host,
+         .port = proxied_port,
+         .protocol = proxy.protocol,
++        .proxied = false,
+     })) |node| return node;
+ 
+     var maybe_valid = false;
+@@ -1619,9 +1627,12 @@ pub fn connect(
+     }
+ 
+     // fall back to using the proxy as a normal http proxy
+-    const connection = try client.connectTcp(proxy.host, proxy.port, proxy.protocol);
+-    connection.proxied = true;
+-    return connection;
++    return client.connectTcpOptions(.{
++        .host = proxy.host,
++        .port = proxy.port,
++        .protocol = proxy.protocol,
++        .proxied = true,
++    });
+ }
+ 
+ pub const RequestError = ConnectTcpError || error{

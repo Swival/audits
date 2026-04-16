@@ -1,0 +1,15 @@
+diff --git a/lib/std/debug/SelfInfo/Windows.zig b/lib/std/debug/SelfInfo/Windows.zig
+index 50684e9b2a..5c7626b8e6 100644
+--- a/lib/std/debug/SelfInfo/Windows.zig
++++ b/lib/std/debug/SelfInfo/Windows.zig
+@@ -50,8 +50,8 @@ pub fn getSymbols(
+ 
+ pub fn getModuleName(si: *SelfInfo, io: Io, address: usize) Error![]const u8 {
+     const gpa = std.debug.getDebugInfoAllocator();
+-    try si.lock.lockShared(io);
+-    defer si.lock.unlockShared(io);
++    try si.lock.lock(io);
++    defer si.lock.unlock(io);
+     const module = try si.findModule(gpa, address);
+     return module.name orelse {
+         const name = try std.unicode.wtf16LeToWtf8Alloc(gpa, module.entry.BaseDllName.slice());

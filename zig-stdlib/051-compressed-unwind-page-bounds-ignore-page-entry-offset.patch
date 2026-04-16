@@ -1,0 +1,13 @@
+diff --git a/lib/std/debug/SelfInfo/MachO.zig b/lib/std/debug/SelfInfo/MachO.zig
+index 91c8cd41dc..af9b76a174 100644
+--- a/lib/std/debug/SelfInfo/MachO.zig
++++ b/lib/std/debug/SelfInfo/MachO.zig
+@@ -233,7 +233,7 @@ fn unwindFrameInner(si: *SelfInfo, io: Io, context: *UnwindContext) !usize {
+             const page_header: *align(1) const macho.unwind_info_compressed_second_level_page_header = @ptrCast(unwind_info[start_offset..]);
+ 
+             const entries_byte_count = page_header.entryCount * @sizeOf(macho.UnwindInfoCompressedEntry);
+-            if (unwind_info.len < start_offset + entries_byte_count) return error.InvalidDebugInfo;
++            if (unwind_info.len < start_offset + page_header.entryPageOffset + entries_byte_count) return error.InvalidDebugInfo;
+             const entries: []align(1) const macho.UnwindInfoCompressedEntry = @ptrCast(
+                 unwind_info[start_offset + page_header.entryPageOffset ..][0..entries_byte_count],
+             );

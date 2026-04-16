@@ -1,0 +1,19 @@
+diff --git a/lib/std/zig/Zoir.zig b/lib/std/zig/Zoir.zig
+index d82b8f1861..45ec4c969c 100644
+--- a/lib/std/zig/Zoir.zig
++++ b/lib/std/zig/Zoir.zig
+@@ -245,7 +245,13 @@ pub const CompileError = extern struct {
+     note_count: u32,
+ 
+     pub fn getNotes(err: CompileError, zoir: Zoir) []const Note {
+-        return zoir.error_notes[err.first_note..][0..err.note_count];
++        const first_note: usize = err.first_note;
++        if (first_note > zoir.error_notes.len) return zoir.error_notes[0..0];
++
++        const note_count: usize = err.note_count;
++        if (note_count > zoir.error_notes.len - first_note) return zoir.error_notes[0..0];
++
++        return zoir.error_notes[first_note..][0..note_count];
+     }
+ 
+     pub const Note = extern struct {

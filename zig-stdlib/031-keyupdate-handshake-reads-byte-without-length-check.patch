@@ -1,0 +1,12 @@
+diff --git a/lib/std/crypto/tls/Client.zig b/lib/std/crypto/tls/Client.zig
+index 93251e5137..e3693072b4 100644
+--- a/lib/std/crypto/tls/Client.zig
++++ b/lib/std/crypto/tls/Client.zig
+@@ -1261,6 +1261,7 @@ fn readIndirect(c: *Client) Reader.Error!usize {
+                         // This client implementation ignores new session tickets.
+                     },
+                     .key_update => {
++                        if (handshake.len != 1) return failRead(c, error.TlsDecodeError);
+                         switch (c.application_cipher) {
+                             inline else => |*p| {
+                                 const pv = &p.tls_1_3;

@@ -1,0 +1,12 @@
+diff --git a/lib/std/crypto/tls/Client.zig b/lib/std/crypto/tls/Client.zig
+index 93251e5137..a3e9100919 100644
+--- a/lib/std/crypto/tls/Client.zig
++++ b/lib/std/crypto/tls/Client.zig
+@@ -1192,6 +1192,7 @@ fn readIndirect(c: *Client) Reader.Error!usize {
+                     return failRead(c, error.TlsBadRecordMac);
+                 // TODO use scalar, non-slice version
+                 const msg = mem.trimEnd(u8, cleartext, "\x00");
++                if (msg.len == 0) return failRead(c, error.TlsDecodeError);
+                 break :cleartext .{ msg.len - 1, @enumFromInt(msg[msg.len - 1]) };
+             },
+             .tls_1_2 => {

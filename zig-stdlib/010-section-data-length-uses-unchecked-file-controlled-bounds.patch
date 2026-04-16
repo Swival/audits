@@ -1,0 +1,32 @@
+diff --git a/lib/std/coff.zig b/lib/std/coff.zig
+index 7dea0f4344..8a060f5376 100644
+--- a/lib/std/coff.zig
++++ b/lib/std/coff.zig
+@@ -956,6 +956,7 @@ pub const Error = error{
+     MissingPEHeader,
+     MissingCoffSection,
+     MissingStringTable,
++    InvalidSectionData,
+ };
+ 
+ // Official documentation of the format: https://docs.microsoft.com/en-us/windows/win32/debug/pe-format
+@@ -1161,13 +1162,15 @@ pub const Coff = struct {
+         return null;
+     }
+ 
+-    pub fn getSectionData(self: *const Coff, sec: *align(1) const SectionHeader) []const u8 {
+-        const offset = if (self.is_loaded) sec.virtual_address else sec.pointer_to_raw_data;
+-        return self.data[offset..][0..sec.virtual_size];
++    pub fn getSectionData(self: *const Coff, sec: *align(1) const SectionHeader) Error![]const u8 {
++        const offset: usize = if (self.is_loaded) sec.virtual_address else sec.pointer_to_raw_data;
++        const size: usize = sec.virtual_size;
++        if (offset > self.data.len or size > self.data.len - offset) return error.InvalidSectionData;
++        return self.data[offset..][0..size];
+     }
+ 
+     pub fn getSectionDataAlloc(self: *const Coff, sec: *align(1) const SectionHeader, allocator: mem.Allocator) ![]u8 {
+-        const section_data = self.getSectionData(sec);
++        const section_data = try self.getSectionData(sec);
+         return allocator.dupe(u8, section_data);
+     }
+ };

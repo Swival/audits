@@ -1,0 +1,12 @@
+diff --git a/lib/std/Build/Step/CheckObject.zig b/lib/std/Build/Step/CheckObject.zig
+index baaf9cb992..c2683c4e25 100644
+--- a/lib/std/Build/Step/CheckObject.zig
++++ b/lib/std/Build/Step/CheckObject.zig
+@@ -2413,6 +2413,7 @@ const WasmDumper = struct {
+                     };
+ 
+                     const section_length = try reader.takeLeb128(u32);
++                    if (section_length > bytes.len - reader.seek) return error.UnexpectedEndOfStream;
+                     try parseAndDumpSection(step, section, bytes[reader.seek..][0..section_length], writer);
+                     reader.seek += section_length;
+                 } else |_| {} // reached end of stream

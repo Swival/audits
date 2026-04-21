@@ -1,0 +1,13 @@
+diff --git a/lib/c/malloc.zig b/lib/c/malloc.zig
+index 083825e438..da901a1ae3 100644
+--- a/lib/c/malloc.zig
++++ b/lib/c/malloc.zig
+@@ -183,7 +183,7 @@ fn memalign(alloc_alignment: usize, n: usize) callconv(.c) ?[*]align(alignment_b
+ }
+ 
+ fn posix_memalign(result: *?[*]align(alignment_bytes) u8, alloc_alignment: usize, n: usize) callconv(.c) c_int {
+-    if (alloc_alignment < @sizeOf(*anyopaque)) return @intFromEnum(std.c.E.INVAL);
++    if (alloc_alignment < @sizeOf(*anyopaque) or !std.math.isPowerOfTwo(alloc_alignment)) return @intFromEnum(std.c.E.INVAL);
+     result.* = aligned_alloc_inner(alloc_alignment, n) orelse return @intFromEnum(std.c.E.NOMEM);
+     return 0;
+ }

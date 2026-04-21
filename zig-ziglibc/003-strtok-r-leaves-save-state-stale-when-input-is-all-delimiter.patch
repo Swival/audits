@@ -1,0 +1,16 @@
+diff --git a/lib/c/string.zig b/lib/c/string.zig
+index da301a19eb..213a014105 100644
+--- a/lib/c/string.zig
++++ b/lib/c/string.zig
+@@ -176,7 +176,10 @@ fn strtok_r(noalias maybe_str: ?[*:0]c_char, noalias values: [*:0]const c_char,
+ 
+     const str_bytes = std.mem.span(@as([*:0]u8, @ptrCast(str)));
+     const values_bytes = std.mem.span(@as([*:0]const u8, @ptrCast(values)));
+-    const tok_start = std.mem.findNone(u8, str_bytes, values_bytes) orelse return null;
++    const tok_start = std.mem.findNone(u8, str_bytes, values_bytes) orelse {
++        state.* = str[str_bytes.len..];
++        return null;
++    };
+ 
+     if (std.mem.findAnyPos(u8, str_bytes, tok_start, values_bytes)) |tok_end| {
+         str[tok_end] = 0;

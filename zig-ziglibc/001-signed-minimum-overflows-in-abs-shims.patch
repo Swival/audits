@@ -1,0 +1,23 @@
+diff --git a/lib/c/stdlib.zig b/lib/c/stdlib.zig
+index eed91193c3..3c55f38007 100644
+--- a/lib/c/stdlib.zig
++++ b/lib/c/stdlib.zig
+@@ -48,15 +48,15 @@ comptime {
+ }
+ 
+ fn abs(a: c_int) callconv(.c) c_int {
+-    return @intCast(@abs(a));
++    return if (a == std.math.minInt(c_int)) a else @intCast(@abs(a));
+ }
+ 
+ fn labs(a: c_long) callconv(.c) c_long {
+-    return @intCast(@abs(a));
++    return if (a == std.math.minInt(c_long)) a else @intCast(@abs(a));
+ }
+ 
+ fn llabs(a: c_longlong) callconv(.c) c_longlong {
+-    return @intCast(@abs(a));
++    return if (a == std.math.minInt(c_longlong)) a else @intCast(@abs(a));
+ }
+ 
+ fn div(a: c_int, b: c_int) callconv(.c) div_t {

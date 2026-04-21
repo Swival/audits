@@ -1,0 +1,12 @@
+diff --git a/lib/c/malloc.zig b/lib/c/malloc.zig
+index 083825e438..daf5bbeb83 100644
+--- a/lib/c/malloc.zig
++++ b/lib/c/malloc.zig
+@@ -88,6 +88,7 @@ const Header = packed struct(u64) {
+ 
+ fn malloc(n: usize) callconv(.c) ?[*]align(alignment_bytes) u8 {
+     const size = std.math.cast(Header.Size, n) orelse return nomem();
++    if (n > std.math.maxInt(usize) - alignment_bytes) return nomem();
+     const ptr: [*]align(alignment_bytes) u8 = @alignCast(
+         vtable.alloc(no_context, n + alignment_bytes, alignment, no_ra) orelse return nomem(),
+     );

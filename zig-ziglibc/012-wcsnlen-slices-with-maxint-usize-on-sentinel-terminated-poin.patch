@@ -1,0 +1,13 @@
+diff --git a/lib/c/wchar.zig b/lib/c/wchar.zig
+index b85687e8a7..f13dca38d3 100644
+--- a/lib/c/wchar.zig
++++ b/lib/c/wchar.zig
+@@ -77,7 +77,7 @@ fn wmemset(dest: [*]wchar_t, elem: wchar_t, len: usize) callconv(.c) [*]wchar_t
+ }
+ 
+ fn wcslen(str: [*:0]const wchar_t) callconv(.c) usize {
+-    return wcsnlen(str, std.math.maxInt(usize));
++    return std.mem.len(str);
+ }
+ 
+ fn wcsnlen(str: [*:0]const wchar_t, max: usize) callconv(.c) usize {

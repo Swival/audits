@@ -4,7 +4,7 @@ Security audit of ziglibc, the Zig standard library's C compatibility layer. Eac
 
 ## Summary
 
-**Total findings: 5** -- High: 2, Medium: 3
+**Total findings: 10** -- High: 5, Medium: 5
 
 ## Findings
 
@@ -22,3 +22,13 @@ Security audit of ziglibc, the Zig standard library's C compatibility layer. Eac
 | [001](001-signed-minimum-overflows-in-abs-shims.md) | Signed minimum overflows in abs shims | Medium |
 | [002](002-memccpy-omits-matched-byte-and-never-returns-null.md) | memccpy omits matched byte and never returns NULL | High |
 | [003](003-strtok-r-leaves-save-state-stale-when-input-is-all-delimiter.md) | strtok_r leaves save state stale when input is all delimiter | Medium |
+| [004](004-lrint-undefined-behavior-on-nan-inf-out-of-range-input.md) | lrint undefined behavior on NaN/Inf/out-of-range input | High |
+| [010](010-ffs-ffsl-ffsll-return-highest-bit-position-instead-of-lowest.md) | ffs/ffsl/ffsll return highest-bit position instead of lowest | High |
+| [012](012-wcsnlen-slices-with-maxint-usize-on-sentinel-terminated-poin.md) | wcsnlen slices with maxInt(usize) on sentinel-terminated pointer | Medium |
+
+### Linux syscall layer
+
+| # | Finding | Severity |
+|---|---------|----------|
+| [001](001-getgroupslinux-intcast-of-negative-size-causes-panic.md) | getgroupsLinux @intCast of negative size causes panic | Medium |
+| [011](011-mprotectlinux-aligns-len-without-accounting-for-addr-alignme.md) | mprotectLinux aligns len without accounting for addr alignment delta | High |

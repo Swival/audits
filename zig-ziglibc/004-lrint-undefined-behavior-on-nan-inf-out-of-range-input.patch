@@ -1,0 +1,28 @@
+diff --git a/lib/c/math.zig b/lib/c/math.zig
+index 20f0b70b5f..0050ff865c 100644
+--- a/lib/c/math.zig
++++ b/lib/c/math.zig
+@@ -254,11 +254,21 @@ fn isnanl(x: c_longdouble) callconv(.c) c_int {
+ }
+ 
+ fn lrint(x: f64) callconv(.c) c_long {
+-    return @intFromFloat(rint(x));
++    const r = rint(x);
++    const min: f64 = @floatFromInt(math.minInt(c_long));
++    if (r >= min and r < -min) {
++        return @intFromFloat(r);
++    }
++    return math.minInt(c_long);
+ }
+ 
+ fn lrintf(x: f32) callconv(.c) c_long {
+-    return @intFromFloat(rintf(x));
++    const r = rintf(x);
++    const min: f32 = @floatFromInt(math.minInt(c_long));
++    if (r >= min and r < -min) {
++        return @intFromFloat(r);
++    }
++    return math.minInt(c_long);
+ }
+ 
+ fn modfGeneric(comptime T: type, x: T, iptr: *T) T {

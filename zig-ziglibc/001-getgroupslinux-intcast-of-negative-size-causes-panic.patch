@@ -1,0 +1,11 @@
+diff --git a/lib/c/unistd.zig b/lib/c/unistd.zig
+index 46229042ed..e276bfaaf4 100644
+--- a/lib/c/unistd.zig
++++ b/lib/c/unistd.zig
+@@ -141,6 +141,7 @@ fn getgidLinux() callconv(.c) linux.gid_t {
+ }
+ 
+ fn getgroupsLinux(size: c_int, list: ?[*]linux.gid_t) callconv(.c) c_int {
++    if (size < 0) return errno(@bitCast(-@as(isize, @intFromEnum(linux.E.INVAL))));
+     return errno(linux.getgroups(@intCast(size), list));
+ }
